@@ -4,6 +4,7 @@
 //
 #include "stdafx.h"
 #include "MyLinuxDistroLauncher.hpp"
+#include "config.h"
 
 static const size_t MAX_USERNAME_LENGTH = 32;
 static const size_t UID_BUFFER_LENGTH = 64;
@@ -29,14 +30,14 @@ HRESULT MyLinuxDistroLauncher::Initialize()
     // Set the name of your distro. This name will be used for registering your
     // distro with WSL, so make it unique to this version of your distro.
     // This name MUST remain constant across upgrades to your app.
-    this->_myName= L"MyDistro.1.0";
+    this->_myName= DISTRO_NAME;
     
     // Completely optional - Set the console window title.
     // For install, this will be the title of the window that appears, instead
     // of the full path to the app 
     //  ex C:\Program Files\WindowsApps\my.linuxdistro_1.0.0.0_x64__8b0vtwsf57ycy\DistroInstaller.exe
     // (bash will usually overwrite this when it starts)
-    SetConsoleTitleW(L"My Distro Name");
+    SetConsoleTitleW(DISTRO_DISPLAY_NAME);
     return S_OK;
 }
 
@@ -335,7 +336,7 @@ HRESULT MyLinuxDistroLauncher::_SetDefaultUser(const std::wstring& userName)
     HRESULT hr = _QueryUserInfo(userName, &uid);
     if (SUCCEEDED(hr))
     {
-        hr = wslApi.WslConfigureDistribution(_myName, uid, (WSL_DISTRIBUTION_FLAGS) WSL_DISTRIBUTION_FLAGS_DEFAULT);
+        hr = wslApi.WslConfigureDistribution(_myName, uid, static_cast<WSL_DISTRIBUTION_FLAGS>(WSL_DISTRIBUTION_FLAGS_DEFAULT));
         if (SUCCEEDED(hr))
         {
             Helpers::PrintMessage(MSG_CREATE_USER_SUCCESS, userName.c_str());
