@@ -21,6 +21,7 @@ private:
 
     std::wstring _FormatBashCommandLine(const std::wstring& commandLine);
     bool _DoesUserExist(const std::wstring & userName);
+    HRESULT _CopyPassword(const std::wstring & srcUser, const std::wstring & dstUser);
 
     HRESULT _AddUserToGroups(const std::wstring& userName, const std::wstring& groups);
     HRESULT _AddUser(const std::wstring& userName);
@@ -28,4 +29,7 @@ private:
     HRESULT _SetUserPassword(const std::wstring& userName);
     HRESULT _QueryUserInfo(const std::wstring& userName, unsigned long* uid);
     HRESULT _SetDefaultUser(const std::wstring& userName);
+    bool _IsSLES();
+    HRESULT _RegisterSLES();
+    HRESULT _RunChkstat();
 };

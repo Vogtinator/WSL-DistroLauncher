@@ -8,7 +8,8 @@
 
 static const size_t MAX_USERNAME_LENGTH = 32;
 static const size_t UID_BUFFER_LENGTH = 64;
-static const std::wstring DEFAULT_USER_GROUPS = L"adm,cdrom,sudo,dip,plugdev";
+static const std::wstring DEFAULT_USER_GROUPS = L"users";
+static const std::wstring VALID_REGCODE_CHARS = L"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890";
 
 using namespace std;
 
@@ -54,7 +55,16 @@ HRESULT MyLinuxDistroLauncher::SetupDistro()
     // Customize your setup here.
     // _SetupFirstUser() is a sample method that should create a user account
     //      on debian-based flavors. Modify that as necessary.
-    HRESULT hr = _SetupFirstUser();
+    HRESULT hr = S_OK;
+
+    if (SUCCEEDED(hr))
+        hr = _RunChkstat();
+
+    if (_IsSLES())
+        hr = _RegisterSLES();
+
+    if (SUCCEEDED(hr))
+        hr = _SetupFirstUser();
 
     return hr;
 }
@@ -114,6 +124,20 @@ HRESULT MyLinuxDistroLauncher::_SetupFirstUser()
     if (SUCCEEDED(hr))
     {
         hr = _SetUserPassword(userName);
+    }
+
+    // Set the password for root.
+    if (SUCCEEDED(hr))
+    {
+        Helpers::PrintMessage(MSG_USE_FOR_ROOTPW_PROMPT);
+        hr = Helpers::PromptAcceptance(MSG_AGREE_PROMPT_WORD, MSG_YESNO_PROMPT);
+        if (SUCCEEDED(hr)) {
+            hr = _CopyPassword(userName, L"root");
+        }
+        else {
+            Helpers::PrintMessage(MSG_ROOT_PASSWORD_PROMPT);
+            hr = _SetUserPassword(L"root");
+        }
     }
 
     if (SUCCEEDED(hr))
@@ -207,6 +231,17 @@ bool MyLinuxDistroLauncher::_DoesUserExist(const wstring & userName)
 }
 
 // Method Description:
+// - Copy the password of userSrc for userDst
+HRESULT MyLinuxDistroLauncher::_CopyPassword(const std::wstring & srcUser,
+                                             const std::wstring & dstUser)
+{
+    wstring commandLine = L"copy=$(grep " + srcUser + L" /etc/shadow | " +
+                          L"cut -d ':' -f 2); sed -i -e \"s|root:[^:]*|" + dstUser + L":$copy|\" /etc/shadow";
+    DWORD returnValue = 0;
+    return wslApi.WslLaunchInteractive(_myName, commandLine.c_str(), true, &returnValue);
+}
+
+// Method Description:
 // - Adds a user to a set of groups.
 // Arguments:
 // - userName: The username to add to groups.
@@ -229,7 +264,7 @@ HRESULT MyLinuxDistroLauncher::_AddUserToGroups(const wstring& userName, const w
 // - An HRESULT with the failure code, or S_OK if it succeeded.
 HRESULT MyLinuxDistroLauncher::_AddUser(const wstring& userName)
 {
-    wstring commandLine = L"/usr/sbin/adduser --quiet --force-badname --disabled-password --gecos '' ";
+    wstring commandLine = L"/usr/sbin/useradd -m ";
     commandLine += userName;
 
     DWORD returnValue = 0;
@@ -357,7 +392,7 @@ HRESULT MyLinuxDistroLauncher::_SetDefaultUser(const std::wstring& userName)
 // - An HRESULT with the failure code, or S_OK if it succeeded.
 HRESULT MyLinuxDistroLauncher::_DeleteUser(const std::wstring& userName)
 {
-    wstring bashCommand = L"/usr/sbin/deluser " + userName + L" &> /dev/null";
+    wstring bashCommand = L"/usr/sbin/userdel " + userName + L" &> /dev/null";
     wstring bashCommandFormatted = _FormatBashCommandLine(bashCommand);
     DWORD returnValue = 0;
     return wslApi.WslLaunchInteractive(_myName, bashCommandFormatted.c_str(), true, &returnValue);
@@ -377,4 +412,56 @@ wstring MyLinuxDistroLauncher::_FormatBashCommandLine(const wstring& commandLine
     wstring formattedCommandLine(_myName, L"/bin/bash -c \"");
     formattedCommandLine += commandLine + L"\"";
     return formattedCommandLine;
+}
+
+// Function Description:
+// - This functions returns true if the distro is a SLES, false for any
+//   other one (most likely an openSUSE).
+bool MyLinuxDistroLauncher::_IsSLES()
+{
+    wstring cmd = L"grep sles /etc/os-release &>/dev/null";
+    DWORD returnValue = 0;
+    wslApi.WslLaunchInteractive(_myName, cmd.c_str(), true, &returnValue);
+    return returnValue == 0;
+}
+
+HRESULT MyLinuxDistroLauncher::_RegisterSLES()
+{
+    HRESULT hr = S_OK;
+
+    Helpers::PrintMessage(MSG_REGISTRATION_CODE_PROMPT);
+    wstring regCode;
+
+    Helpers::PrintMessage(MSG_ENTER_REGISTRATION_CODE);
+    wchar_t inputBuffer[256];
+
+    if (_getws_s(inputBuffer, 256))
+    {
+        regCode = wstring(inputBuffer);
+        if (regCode.find_first_not_of(VALID_REGCODE_CHARS.c_str()) != std::wstring::npos)
+        {
+            Helpers::PrintMessage(MSG_INVALID_REGCODE);
+            regCode = L"";
+        }
+    }
+
+    if (regCode.empty())
+    {
+        Helpers::PrintMessage(MSG_SKIPPED_REGISTRATION);
+    }
+    else
+    {
+        wstring command = L"/usr/bin/SUSEConnect -r " + regCode;
+        DWORD returnValue = 0;
+        hr = wslApi.WslLaunchInteractive(_myName, command.c_str(), true, &returnValue);
+    }
+
+    return hr;
+}
+
+HRESULT MyLinuxDistroLauncher::_RunChkstat()
+{
+    wstring command = L"/usr/bin/chkstat --system &>/dev/null";
+    DWORD returnValue = 0;
+    return wslApi.WslLaunchInteractive(_myName, command.c_str(), true, &returnValue);
 }

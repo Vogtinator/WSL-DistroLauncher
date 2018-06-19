@@ -146,3 +146,40 @@ Language=English
 It appears this distro's installation has become corrupted.
 Please try uninstalling and reinstalling the app.
 .
+
+MessageId=1026 SymbolicName=MSG_USE_FOR_ROOTPW_PROMPT
+Language=English
+Use same password for root user?
+.
+
+MessageId=1027 SymbolicName=MSG_YESNO_PROMPT
+Language=English
+Type "%1" to approve, any other key to reject: %0
+.
+
+MessageId=1028 SymbolicName=MSG_ROOT_PASSWORD_PROMPT
+Language=English
+Enter root password.
+.
+
+MessageId=1029 SymbolicName=MSG_REGISTRATION_CODE_PROMPT
+Language=English
+Register your SLES to enjoy the full SLES experience.
+Visit https://www.suse.com/subscriptions/sles/developer/ for free developer subscription.
+.
+
+MessageId=1030 SymbolicName=MSG_ENTER_REGISTRATION_CODE
+Language=English
+Enter registration code (leave empty to skip registration): %0
+.
+
+MessageId=1031 SymbolicName=MSG_SKIPPED_REGISTRATION
+Language=English
+Registration has been skipped. SLES can still be registered later with this command
+  SUSEConnect -r <regcode>
+.
+
+MessageId=1032 SymbolicName=MSG_INVALID_REGCODE
+Language=English
+Malformed registration code.
+.
