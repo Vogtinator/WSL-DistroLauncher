@@ -435,7 +435,7 @@ HRESULT MyLinuxDistroLauncher::_RegisterSLES()
     Helpers::PrintMessage(MSG_ENTER_REGISTRATION_CODE);
     wchar_t inputBuffer[256];
 
-    if (_getws_s(inputBuffer, 256))
+    if (fgetws(inputBuffer, 256, stdin))
     {
         regCode = wstring(inputBuffer);
         if (regCode.find_first_not_of(VALID_REGCODE_CHARS.c_str()) != std::wstring::npos)

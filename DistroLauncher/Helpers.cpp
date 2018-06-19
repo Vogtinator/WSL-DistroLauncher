@@ -35,7 +35,7 @@ HRESULT _DoPromptAcceptance(const std::wstring& promptWord, const std::wstring& 
     
     wprintf(L"%ls", prompt.c_str());
 
-    size_t fieldsRead = wscanf_s(L"%s", inputBuffer.get(), (unsigned int)promptWordSize);
+    size_t fieldsRead = wscanf(L"%s", inputBuffer.get());
     if (fieldsRead == 1)
     {
         bool matches = (0 == _wcsicmp(inputBuffer.get(), promptWord.c_str()));
@@ -84,7 +84,7 @@ std::wstring Helpers::GetUserInput(DWORD promptMsg, size_t maxCharacters)
     wprintf(L"%ls", prompt.c_str());
     std::wstring input;
     
-    if (wscanf_s(L"%s", inputBuffer.get(), (unsigned int)bufferSize) == 1) {
+    if (wscanf(L"%s", inputBuffer.get()) == 1) {
         input = inputBuffer.get();
     }
 
